@@ -41,26 +41,28 @@ func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger(logger))
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok"}`))
-	})
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"ok"}`))
+		})
 
-	// Public routes
-	r.Group(func(r chi.Router) {
-		r.Mount("/users/login", userProxy.StripAndServe("/users/login"))
-		r.Mount("/users/register", userProxy.StripAndServe("/users/register"))
-		r.Mount("/catalog", catalogProxy.StripAndServe("/catalog"))
-	})
+		// Public routes
+		r.Group(func(r chi.Router) {
+			r.Mount("/users/login", userProxy.StripAndServe("/users"))
+			r.Mount("/users/register", userProxy.StripAndServe("/users"))
+			r.Mount("/catalog", catalogProxy.StripAndServe("/catalog"))
+		})
 
-	// Protected routes
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.Auth(cfg.JWTSecret))
+		// Protected routes
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.Auth(cfg.JWTSecret))
 
-		r.Mount("/users", userProxy.StripAndServe("/users"))
-		r.Mount("/inventories", inventoryProxy.StripAndServe("/inventories"))
-		r.Mount("/orders", orderProxy.StripAndServe("/orders"))
-		r.Mount("/payments", paymentProxy.StripAndServe("/payments"))
+			r.Mount("/users", userProxy.StripAndServe("/users"))
+			r.Mount("/inventories", inventoryProxy.StripAndServe("/inventories"))
+			r.Mount("/orders", orderProxy.StripAndServe("/orders"))
+			r.Mount("/payments", paymentProxy.StripAndServe("/payments"))
+		})
 	})
 
 	return r, nil
