@@ -49,13 +49,13 @@ This project uses **Docker** to run each service in its own isolated container. 
 ### Running the Project
 ```bash
 # Start all services
-docker compose up
+docker compose -f compose.dev.yaml up
 
 # Rebuild images after code changes
-docker compose up --build
+docker compose -f compose.dev.yaml up --build
 
 # Stop all services
-docker compose down
+docker compose -f compose.dev.yaml down
 ```
 
 Each service has its own `Dockerfile` within its directory. The root `docker-compose.yml` ties all services together, handling networking, environment variables, and dependencies between containers.
