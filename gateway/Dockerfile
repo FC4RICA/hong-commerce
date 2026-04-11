@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS base
+FROM golang:1.26-alpine3.23 AS base
 
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -9,7 +9,7 @@ FROM base AS dev
 
 RUN go install github.com/air-verse/air@latest
 COPY . .
-CMD ["air", "-c", "services/gateway/.air.toml"]
+CMD ["air", "-c", ".air.toml"]
 
 
 FROM base AS builder
@@ -18,7 +18,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
     -o /gateway \
-    ./services/gateway
+    ./gateway
 
 
 FROM scratch AS prod
