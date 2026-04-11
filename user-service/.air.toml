@@ -1,0 +1,9 @@
+[build]
+  cmd = "go build -o ./tmp/user-service ./cmd/main.go"
+  bin = "./tmp/user-service"
+  include_ext = ["go"]
+  exclude_dir  = ["tmp", "vendor"]
+  delay = 1000
+
+[log]
+  time = false

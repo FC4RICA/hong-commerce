@@ -34,6 +34,7 @@ func main() {
 	r.Post("/register", h.Register)
 	r.Post("/login", h.Login)
 	r.Get("/me", h.GetMe) // protected at gateway; X-User-Id header injected
+	r.Get("/health", h.Health)
 
 	log.Printf("user-service listening on %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
