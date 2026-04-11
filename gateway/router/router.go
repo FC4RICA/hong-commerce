@@ -49,8 +49,8 @@ func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 
 		// Public routes
 		r.Group(func(r chi.Router) {
-			r.Mount("/users/login", userProxy.StripAndServe("/users"))
-			r.Mount("/users/register", userProxy.StripAndServe("/users"))
+			r.Mount("/users/login", userProxy.ReverseWithPath("/login"))
+			r.Mount("/users/register", userProxy.ReverseWithPath("/register"))
 			r.Mount("/catalog", catalogProxy.StripAndServe("/catalog"))
 		})
 

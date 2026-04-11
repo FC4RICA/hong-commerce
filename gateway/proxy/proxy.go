@@ -62,3 +62,10 @@ func (s *ServiceProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *ServiceProxy) StripAndServe(prefix string) http.Handler {
 	return http.StripPrefix(prefix, s.proxy)
 }
+
+func (s *ServiceProxy) ReverseWithPath(targetPath string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = targetPath
+		s.proxy.ServeHTTP(w, r)
+	}
+}
