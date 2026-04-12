@@ -2,7 +2,7 @@ FROM golang:1.26-alpine3.23 AS dev
 
 WORKDIR /app
 
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.61.5
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -14,6 +14,8 @@ CMD ["air", "-c", ".air.toml"]
 FROM golang:1.26-alpine3.23 AS builder
 
 WORKDIR /app
+
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.19.1
 
 COPY go.mod go.sum ./
 RUN go mod download

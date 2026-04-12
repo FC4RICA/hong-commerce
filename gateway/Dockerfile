@@ -7,7 +7,7 @@ RUN go mod download
 
 FROM base AS dev
 
-RUN go install github.com/air-verse/air@latest
+RUN go install github.com/air-verse/air@v1.61.5
 COPY . .
 CMD ["air", "-c", ".air.toml"]
 
