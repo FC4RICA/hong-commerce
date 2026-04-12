@@ -45,17 +45,28 @@ This project uses **Docker** to run each service in its own isolated container. 
 
 ### Prerequisites
 - [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed
+- `make` for easier setup
+Optionally install `make` for easier setup
+
+```bash
+# Windows
+choco install make
+# Mac
+brew install make
+```
 
 ### Running the Project
 ```bash
-# Start all services
-docker compose -f compose.dev.yaml up
+make dev-up      # start all services
+make dev-down    # stop all services
+make dev-fresh   # reset everything (wipes db data)
+```
 
-# Rebuild images after code changes
-docker compose -f compose.dev.yaml up --build
-
-# Stop all services
-docker compose -f compose.dev.yaml down
+Without Make
+```bash
+docker compose -f compose.dev.yaml up --build    # start
+docker compose -f compose.dev.yaml down          # stop
+docker compose -f compose.dev.yaml down -v       # reset (wipes db data)
 ```
 
 Each service has its own `Dockerfile` within its directory. The root `docker-compose.yml` ties all services together, handling networking, environment variables, and dependencies between containers.
