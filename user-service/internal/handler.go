@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -20,13 +21,21 @@ func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	h.createUser(w, r, h.svc.Register)
+}
+
+func (h *Handler) RegisterAdmin(w http.ResponseWriter, r *http.Request) {
+	h.createUser(w, r, h.svc.RegisterAdmin)
+}
+
+func (h *Handler) createUser(w http.ResponseWriter, r *http.Request, s func(context.Context, RegisterRequest) (*UserResponse, error)) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	user, err := h.svc.Register(r.Context(), req)
+	user, err := s(r.Context(), req)
 	if err != nil {
 		var valErr *ValidationError
 		switch {

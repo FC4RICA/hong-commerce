@@ -36,6 +36,8 @@ func main() {
 	r.Get("/me", h.GetMe) // protected at gateway; X-User-Id header injected
 	r.Get("/health", h.Health)
 
+	r.Post("/admin/register", h.RegisterAdmin) // gateway enforces role=admin
+
 	log.Printf("user-service listening on %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
 		log.Fatalf("server: %v", err)

@@ -24,6 +24,14 @@ func NewService(repo *Repository, jwtSecret string) *Service {
 }
 
 func (s *Service) Register(ctx context.Context, req RegisterRequest) (*UserResponse, error) {
+	return s.createUser(ctx, req, "user")
+}
+
+func (s *Service) RegisterAdmin(ctx context.Context, req RegisterRequest) (*UserResponse, error) {
+	return s.createUser(ctx, req, "admin")
+}
+
+func (s *Service) createUser(ctx context.Context, req RegisterRequest, role string) (*UserResponse, error) {
 	if err := validateRegisterRequest(req); err != nil {
 		return nil, err
 	}
@@ -33,7 +41,7 @@ func (s *Service) Register(ctx context.Context, req RegisterRequest) (*UserRespo
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	user, err := s.repo.CreateUser(ctx, req.Email, string(hash), req.Name)
+	user, err := s.repo.CreateUser(ctx, req.Email, string(hash), req.Name, role)
 	if err != nil {
 		return nil, err // ErrEmailAlreadyExists passes through as-is
 	}
@@ -78,7 +86,7 @@ func (s *Service) GetMe(ctx context.Context, userID int64) (*UserResponse, error
 func (s *Service) issueToken(user *User) (string, error) {
 	claims := jwt.MapClaims{
 		"user_id": strconv.FormatInt(user.ID, 10),
-		"role":    "user",
+		"role":    user.Role,
 		"email":   user.Email,
 		"name":    user.Name,
 		"exp":     time.Now().Add(24 * time.Hour).Unix(),
