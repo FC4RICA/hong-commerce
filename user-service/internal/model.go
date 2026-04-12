@@ -3,7 +3,7 @@ package internal
 import "time"
 
 type User struct {
-	ID           int64     `db:"id"`
+	ID           string    `db:"id"`
 	Email        string    `db:"email"`
 	PasswordHash string    `db:"password_hash"`
 	Name         string    `db:"name"`
@@ -26,7 +26,7 @@ type LoginRequest struct {
 
 // Response DTOs
 type UserResponse struct {
-	ID        int64     `json:"id"`
+	ID        string    `json:"id"`
 	Email     string    `json:"email"`
 	Name      string    `json:"name"`
 	Role      string    `json:"role"`

@@ -70,7 +70,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*User, e
 	return &user, nil
 }
 
-func (r *Repository) GetUserByID(ctx context.Context, id int64) (*User, error) {
+func (r *Repository) GetUserByID(ctx context.Context, id string) (*User, error) {
 	query := `
 		SELECT id, email, password_hash, name, role, created_at, updated_at
 		FROM users WHERE id = $1

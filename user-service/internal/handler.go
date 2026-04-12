@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 )
 
 type Handler struct {
@@ -76,15 +75,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // The gateway validates the JWT and forwards the claim as a header so services
 // don't need to re-parse tokens.
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.Header.Get("X-User-ID")
-	if userIDStr == "" {
+	userID := r.Header.Get("X-User-ID")
+	if userID == "" {
 		respondError(w, http.StatusUnauthorized, "missing user id")
-		return
-	}
-
-	userID, err := strconv.ParseInt(userIDStr, 10, 64)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "invalid user id")
 		return
 	}
 
