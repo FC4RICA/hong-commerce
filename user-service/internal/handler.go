@@ -67,7 +67,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // The gateway validates the JWT and forwards the claim as a header so services
 // don't need to re-parse tokens.
 func (h *Handler) GetMe(w http.ResponseWriter, r *http.Request) {
-	userIDStr := r.Header.Get("X-User-Id")
+	userIDStr := r.Header.Get("X-User-ID")
 	if userIDStr == "" {
 		respondError(w, http.StatusUnauthorized, "missing user id")
 		return

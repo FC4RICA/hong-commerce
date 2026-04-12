@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -76,11 +77,12 @@ func (s *Service) GetMe(ctx context.Context, userID int64) (*UserResponse, error
 // issueToken creates a signed JWT for the given user.
 func (s *Service) issueToken(user *User) (string, error) {
 	claims := jwt.MapClaims{
-		"sub":   user.ID,
-		"email": user.Email,
-		"name":  user.Name,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
-		"iat":   time.Now().Unix(),
+		"user_id": strconv.FormatInt(user.ID, 10),
+		"role":    "user",
+		"email":   user.Email,
+		"name":    user.Name,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"iat":     time.Now().Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(s.jwtSecret)
