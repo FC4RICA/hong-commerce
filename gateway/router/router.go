@@ -49,8 +49,8 @@ func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 
 		// Public routes
 		r.Group(func(r chi.Router) {
-			r.Mount("/users/login", userProxy.ReverseWithPath("/login"))
-			r.Mount("/users/register", userProxy.ReverseWithPath("/register"))
+			r.Post("/users/login", userProxy.ReverseWithPath("/login"))
+			r.Post("/users/register", userProxy.ReverseWithPath("/register"))
 			r.Mount("/catalog", catalogProxy.StripAndForward("/api/v1/catalog"))
 		})
 
@@ -62,6 +62,13 @@ func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 			r.Mount("/inventories", inventoryProxy.StripAndForward("/api/v1/inventories"))
 			r.Mount("/orders", orderProxy.StripAndForward("/api/v1/orders"))
 			r.Mount("/payments", paymentProxy.StripAndForward("/api/v1/payments"))
+
+			// Admin routes
+			r.Group(func(r chi.Router) {
+				r.Use(middleware.RequireRole("admin"))
+
+				r.Post("/users/admin/register", userProxy.ReverseWithPath("/admin/register"))
+			})
 		})
 	})
 
