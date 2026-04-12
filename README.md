@@ -114,7 +114,7 @@ gateway/docs/api-endpoint-descriptions
 2. **Fill out the PR description** with:
    - What changed and why
    - Related task link  
-3. **Merge method — Rebase only.** When merging, always select **"Rebase and merge"** (not "Create a merge commit" or "Squash and merge"). This keeps the commit history linear and readable.
+3. **Merge method — Rebase or Squash only.** When merging, always select **"Rebase and merge"** for small PR or **"Squash and merge"** for PR with multiple commits (not "Create a merge commit"). This keeps the commit history linear and readable.
 
 ### General Workflow
 ```bash
