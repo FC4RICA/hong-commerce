@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"github.com/FC4RICA/hong-commerce/gateway/config"
 	"go.uber.org/zap"
@@ -53,16 +54,23 @@ func New(rawURL string, cfg *config.Config, logger *zap.Logger) (*ServiceProxy, 
 	}, nil
 }
 
-// ServeHTTP makes ServiceProxy implement http.Handler directly
+// Makes ServiceProxy implement http.Handler directly
 func (s *ServiceProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.proxy.ServeHTTP(w, r)
 }
 
-// StripAndServe rewrites the path before proxying.
-func (s *ServiceProxy) StripAndServe(prefix string) http.Handler {
-	return http.StripPrefix(prefix, s.proxy)
+// For wildcard routes. Strips full prefix including /api/v1
+func (s *ServiceProxy) StripAndForward(prefix string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
+		if r.URL.Path == "" {
+			r.URL.Path = "/"
+		}
+		s.proxy.ServeHTTP(w, r)
+	}
 }
 
+// For exact routes. Rewrites path to a fixed target
 func (s *ServiceProxy) ReverseWithPath(targetPath string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = targetPath

@@ -51,17 +51,17 @@ func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 		r.Group(func(r chi.Router) {
 			r.Mount("/users/login", userProxy.ReverseWithPath("/login"))
 			r.Mount("/users/register", userProxy.ReverseWithPath("/register"))
-			r.Mount("/catalog", catalogProxy.StripAndServe("/catalog"))
+			r.Mount("/catalog", catalogProxy.StripAndForward("/api/v1/catalog"))
 		})
 
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.Auth(cfg.JWTSecret))
 
-			r.Mount("/users", userProxy.StripAndServe("/users"))
-			r.Mount("/inventories", inventoryProxy.StripAndServe("/inventories"))
-			r.Mount("/orders", orderProxy.StripAndServe("/orders"))
-			r.Mount("/payments", paymentProxy.StripAndServe("/payments"))
+			r.Mount("/users", userProxy.StripAndForward("/api/v1/users"))
+			r.Mount("/inventories", inventoryProxy.StripAndForward("/api/v1/inventories"))
+			r.Mount("/orders", orderProxy.StripAndForward("/api/v1/orders"))
+			r.Mount("/payments", paymentProxy.StripAndForward("/api/v1/payments"))
 		})
 	})
 
