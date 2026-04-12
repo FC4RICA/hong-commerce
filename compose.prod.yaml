@@ -2,8 +2,8 @@ services:
 
   gateway:
     build:
-      context: .
-      dockerfile: services/gateway/Dockerfile
+      context: ./gateway
+      dockerfile: Dockerfile
       target: prod
     ports:
       - "8080:8080"
@@ -23,3 +23,52 @@ services:
     depends_on:
       user-service:
         condition: service_healthy
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+      target: prod
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgres://postgres:${USER_DB_PASSWORD}@user-db:5432/userdb?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    restart: unless-stopped
+    depends_on:
+      user-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  user-db:
+    image: postgres:18.3-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: userdb
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  user_db_data:

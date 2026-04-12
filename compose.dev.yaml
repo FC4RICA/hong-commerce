@@ -2,8 +2,8 @@ services:
 
   gateway:
     build:
-      context: .
-      dockerfile: services/gateway/Dockerfile
+      context: ./gateway
+      dockerfile: Dockerfile
       target: dev
     ports:
       - "8080:8080"
@@ -15,9 +15,49 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8084
       PAYMENT_SERVICE_URL: http://payment-service:8085
     volumes:
-      - .:/app                     # mount source for hot reload
-    command: air -c services/gateway/.air.toml
+      - ./gateway:/app                     # mount source for hot reload
     restart: "no"
     depends_on:
       user-service:
         condition: service_healthy
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      PORT: 8081
+      DATABASE_URL: postgres://postgres:${USER_DB_PASSWORD}@user-db:5432/userdb?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./user-service:/app
+    restart: "no"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  user-db:
+    image: postgres:18.3-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: userdb
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+      - ./user-service/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  user_db_data:
