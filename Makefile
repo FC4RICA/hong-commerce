@@ -1,10 +1,7 @@
 .PHONY: dev-up dev-down dev-fresh migrate-up
 
-dev-up:
+dev:
 	docker compose -f compose.dev.yaml up --build
-
-dev-down:
-	docker compose -f compose.dev.yaml down
 
 dev-fresh:
 	docker compose -f compose.dev.yaml down -v
