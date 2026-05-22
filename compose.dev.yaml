@@ -20,6 +20,8 @@ services:
     depends_on:
       user-service:
         condition: service_healthy
+      order-service:
+        condition: service_healthy
 
   user-service:
     build:
@@ -59,5 +61,64 @@ services:
       retries: 5
       start_period: 10s
 
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      PORT: 8083
+      DATABASE_URL: postgres://postgres:${ORDER_DB_PASSWORD}@order-db:5432/orderdb?sslmode=disable
+      REDIS_URL: ${REDIS_URL}
+      RABBITMQ_URL: ${RABBITMQ_URL}
+    volumes:
+      - ./order-service:/app
+    restart: "no"
+    depends_on:
+      order-db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  order-db:
+    image: postgres:18.3-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
+      POSTGRES_DB: orderdb
+    volumes:
+      - order_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d orderdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7.4-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
 volumes:
   user_db_data:
+  order_db_data:
