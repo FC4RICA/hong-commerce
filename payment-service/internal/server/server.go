@@ -31,10 +31,10 @@ func NewServer(cfg *config.Config, paymentHandler *handlers.PaymentHandler) *Ser
 
 	app := fiber.New()
 
-	// Register Fiber v3 logger
 	app.Use(logger.New())
 
-	app.Patch("/api/v1/payments/:paymentID/status", paymentHandler.UpdatePaymentStatus)
+	// Register routes (Gateway strips /api/v1/payments, so we listen at the root)
+	app.Patch("/:paymentID/status", paymentHandler.UpdatePaymentStatus)
 
 	return &Server{
 		app:     app,
