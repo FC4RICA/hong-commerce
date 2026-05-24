@@ -8,10 +8,21 @@ datasource db {
 }
 
 model Item {
+  id           String        @id @default(cuid())
+  name         String
+  quantity     Int
+  reserved     Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+}
+
+model Reservation {
   id        String   @id @default(cuid())
-  name      String
+  orderId   String
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
   quantity  Int
-  reserved  Int      @default(0)
+  status    String   // "reserved", "released"
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }

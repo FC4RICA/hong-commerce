@@ -5,24 +5,26 @@ import { DeleteItem } from "./application/use-cases/DeleteItem";
 import { GetItem } from "./application/use-cases/GetItem";
 import { ListItems } from "./application/use-cases/ListItems";
 import { UpdateItem } from "./application/use-cases/UpdateItem";
-import { DecreaseStock } from "./application/use-cases/DecreaseStock";
+import { ReserveStock } from "./application/use-cases/ReserveStock";
 import { PrismaItemRepository } from "./infrastructure/repositories/PrismaItemRepository";
 import { rabbitmq } from "./infrastructure/messaging/rabbitmq";
 import { RabbitMQConsumer } from "./infrastructure/messaging/RabbitMQConsumer";
+import { RabbitMQEventBus } from "./infrastructure/messaging/RabbitMQEventBus";
 import { itemRoutes } from "./presentation/http/item.routes";
 import { ValidationError } from "./application/errors/ValidationError";
 
 const itemRepository = new PrismaItemRepository();
+const eventBus = new RabbitMQEventBus();
 
 const createItem = new CreateItem(itemRepository);
 const listItems = new ListItems(itemRepository);
 const getItem = new GetItem(itemRepository);
 const updateItem = new UpdateItem(itemRepository);
 const deleteItem = new DeleteItem(itemRepository);
-const decreaseStock = new DecreaseStock(itemRepository);
+const reserveStock = new ReserveStock(itemRepository);
 
 // Start RabbitMQ Consumer
-const rabbitMQConsumer = new RabbitMQConsumer(decreaseStock);
+const rabbitMQConsumer = new RabbitMQConsumer(reserveStock, eventBus);
 rabbitMQConsumer.start().catch((err) => {
   console.error("[RabbitMQ] Failed to start consumer:", err);
 });
