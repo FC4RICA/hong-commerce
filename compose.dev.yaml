@@ -52,7 +52,7 @@ services:
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
       POSTGRES_DB: userdb
     volumes:
-      - user_db_data:/var/lib/postgresql/data
+      - user_db_data:/var/lib/postgresql
       - ./user-service/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
@@ -66,23 +66,27 @@ services:
       context: ./order-service
       dockerfile: Dockerfile
       target: dev
+    container_name: hong_commerce_order_service
     environment:
-      PORT: 8083
-      DATABASE_URL: postgres://postgres:${ORDER_DB_PASSWORD}@order-db:5432/orderdb?sslmode=disable
-      REDIS_URL: ${REDIS_URL}
+      PORT: ${ORDER_SERVICE_PORT}
+      ORDER_DB_HOST: order-db
+      ORDER_DB_PORT: ${ORDER_DB_PORT}
+      ORDER_DB_USER: ${ORDER_DB_USER}
+      ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
+      ORDER_DB_NAME: ${ORDER_DB_NAME}
+      ORDER_DB_SSLMODE: ${ORDER_DB_SSLMODE}
       RABBITMQ_URL: ${RABBITMQ_URL}
+      ORDER_TIMEOUT_MINUTES: ${ORDER_TIMEOUT_MINUTES}
     volumes:
       - ./order-service:/app
     restart: "no"
     depends_on:
       order-db:
         condition: service_healthy
-      redis:
-        condition: service_started
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8083/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:${ORDER_SERVICE_PORT}/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -91,25 +95,18 @@ services:
   order-db:
     image: postgres:18.3-alpine3.23
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${ORDER_DB_USER}
       POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
-      POSTGRES_DB: orderdb
+      POSTGRES_DB: ${ORDER_DB_NAME}
     volumes:
-      - order_db_data:/var/lib/postgresql/data
+      - order_db_data:/var/lib/postgresql
+      - ./order-service/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d orderdb"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
-
-  redis:
-    image: redis:7.4-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   rabbitmq:
     image: rabbitmq:4.0-management-alpine
