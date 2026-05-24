@@ -15,7 +15,7 @@ export const rabbitmq = {
     const url = process.env.RABBITMQ_URL ?? "amqp://localhost:5672";
     try {
       connection = await amqplib.connect(url);
-      
+
       connection.on("error", (err) => {
         console.error("[RabbitMQ] connection error", err);
         connection = null;
