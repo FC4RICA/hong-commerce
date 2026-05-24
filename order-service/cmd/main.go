@@ -92,6 +92,11 @@ func main() {
 	app.Use(logger.New())
 	app.Use(recover.New())
 
+	// Health check (moved before middleware)
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
+
 	// Request Timeout Middleware (Custom safe implementation)
 	orderTimeout := 5 * time.Second
 	timeoutMiddleware := func(c *fiber.Ctx) error {
@@ -106,11 +111,6 @@ func main() {
 	app.Post("/", timeoutMiddleware, h.CreateOrder)
 	app.Get("/", timeoutMiddleware, h.GetAllOrders)
 	app.Get("/:id", timeoutMiddleware, h.GetOrderByID)
-
-	// Health check
-	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.SendString("OK")
-	})
 
 	log.Printf("Order Service starting on port %s", cfg.Port)
 	if err := app.Listen(":" + cfg.Port); err != nil {
