@@ -9,6 +9,7 @@ export type UpdateItemInput = {
   id: string;
   name?: string;
   quantity?: number;
+  reserved?: number;
 };
 
 export class UpdateItem {
@@ -30,6 +31,13 @@ export class UpdateItem {
         throw new ValidationError("Quantity must be a non-negative integer.");
       }
       data.quantity = input.quantity;
+    }
+
+    if (input.reserved !== undefined) {
+        if (!Number.isInteger(input.reserved) || input.reserved < 0) {
+          throw new ValidationError("Reserved must be a non-negative integer.");
+        }
+        data.reserved = input.reserved;
     }
 
     if (Object.keys(data).length === 0) {
