@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway
@@ -15,7 +14,7 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8084
       PAYMENT_SERVICE_URL: http://payment-service:8085
     volumes:
-      - ./gateway:/app                     # mount source for hot reload
+      - ./gateway:/app # mount source for hot reload
     restart: "no"
     depends_on:
       user-service:
@@ -50,7 +49,7 @@ services:
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
       POSTGRES_DB: userdb
     volumes:
-      - user_db_data:/var/lib/postgresql/data
+      - user_db_data:/var/lib/postgresql
       - ./user-service/migrations:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d userdb"]
@@ -59,5 +58,38 @@ services:
       retries: 5
       start_period: 10s
 
+  payment-db:
+    image: postgres:18.3-alpine3.23
+    container_name: payment-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
+      POSTGRES_DB: paymentdb
+    volumes:
+      - payment_db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672" # พอร์ตสำหรับเชื่อมต่อรับ-ส่งข้อมูล (AMQP)
+      - "15672:15672" # พอร์ตสำหรับหน้า Dashboard (RabbitMQ Management)
+    environment:
+      RABBITMQ_DEFAULT_USER: ${MQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${MQ_PASSWORD:-guest}
+      RABBITMQ_DEFAULT_VHOST: ${MQ_VHOST:-/}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   user_db_data:
+  payment_db_data:
