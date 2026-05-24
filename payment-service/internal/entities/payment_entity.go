@@ -8,15 +8,16 @@ import (
 )
 
 type Payment struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
-	OrderID   string         `json:"order_id"`
-	UserID    string         `json:"user_id"`
-	Amount    float64        `json:"amount"`
-	Status    string         `json:"status"`
-	Currency  string         `json:"currency"`
+	ID             uuid.UUID      `gorm:"type:uuid;primaryKey" json:"id"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	OrderID        string         `json:"order_id"`
+	UserID         string         `json:"user_id"`
+	Amount         float64        `json:"amount"`
+	Status         string         `json:"status"`
+	Currency       string         `json:"currency"`
+	TransactionRef string         `json:"transaction_ref"`
 }
 
 // BeforeCreate is a GORM hook that automatically runs before inserting a record to populate the UUID if it is not already set.
