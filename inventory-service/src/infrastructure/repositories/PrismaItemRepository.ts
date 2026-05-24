@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import type { Item } from "../../domain/entities/Item";
+import { type Item, mapToItem } from "../../domain/entities/Item";
 import type {
   CreateItemData,
   ItemRepository,
@@ -9,20 +9,24 @@ import { prisma } from "../prisma/client";
 
 export class PrismaItemRepository implements ItemRepository {
   async create(data: CreateItemData): Promise<Item> {
-    return prisma.item.create({ data });
+    const item = await prisma.item.create({ data });
+    return mapToItem(item);
   }
 
   async findById(id: string): Promise<Item | null> {
-    return prisma.item.findUnique({ where: { id } });
+    const item = await prisma.item.findUnique({ where: { id } });
+    return item ? mapToItem(item) : null;
   }
 
   async list(): Promise<Item[]> {
-    return prisma.item.findMany({ orderBy: { createdAt: "desc" } });
+    const items = await prisma.item.findMany({ orderBy: { createdAt: "desc" } });
+    return items.map(mapToItem);
   }
 
   async update(id: string, data: UpdateItemData): Promise<Item | null> {
     try {
-      return await prisma.item.update({ where: { id }, data });
+      const item = await prisma.item.update({ where: { id }, data });
+      return mapToItem(item);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -36,7 +40,8 @@ export class PrismaItemRepository implements ItemRepository {
 
   async delete(id: string): Promise<Item | null> {
     try {
-      return await prisma.item.delete({ where: { id } });
+      const item = await prisma.item.delete({ where: { id } });
+      return item ? mapToItem(item) : null;
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

@@ -3,11 +3,13 @@ import type { Item } from "../entities/Item";
 export type CreateItemData = {
   name: string;
   quantity: number;
+  reserved?: number;
 };
 
 export type UpdateItemData = {
   name?: string;
   quantity?: number;
+  reserved?: number;
 };
 
 export interface ItemRepository {

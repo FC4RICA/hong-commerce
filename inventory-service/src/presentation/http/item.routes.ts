@@ -26,6 +26,7 @@ export const itemRoutes = (deps: ItemRoutesDeps) =>
         body: t.Object({
           name: t.String(),
           quantity: t.Number(),
+          reserved: t.Optional(t.Number()),
         }),
       },
     )
@@ -57,6 +58,7 @@ export const itemRoutes = (deps: ItemRoutesDeps) =>
         body: t.Object({
           name: t.Optional(t.String()),
           quantity: t.Optional(t.Number()),
+          reserved: t.Optional(t.Number()),
         }),
       },
     )
