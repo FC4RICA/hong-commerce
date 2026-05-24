@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/FC4RICA/hong-commerce/payment-service/config"
+	"github.com/FC4RICA/hong-commerce/payment-service/internal/entities"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -40,7 +41,7 @@ func ConnectDB(cfg *config.Config) (*gorm.DB, error) {
 
 	slog.Info("Database connected successfully")
 
-	if err := db.AutoMigrate(); err != nil {
+	if err := db.AutoMigrate(&entities.Payment{}, &entities.IdempotencyKey{}); err != nil {
 		return nil, fmt.Errorf("auto-migrate: %w", err)
 	}
 
