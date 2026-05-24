@@ -12,7 +12,7 @@ type Payment struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
-	OrderID        string         `json:"order_id"`
+	OrderID        string         `gorm:"uniqueIndex" json:"order_id"`
 	UserID         string         `json:"user_id"`
 	Amount         float64        `json:"amount"`
 	Status         string         `json:"status"`
