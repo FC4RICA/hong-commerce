@@ -33,6 +33,14 @@ func NewServer(cfg *config.Config, paymentHandler *handlers.PaymentHandler) *Ser
 
 	app.Use(logger.New())
 
+	// Health check endpoint
+	app.Get("/health", func(c fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(fiber.Map{
+			"status":  "ok",
+			"service": "payment-service",
+		})
+	})
+
 	// Register routes (Gateway strips /api/v1/payments, so we listen at the root)
 	app.Patch("/:paymentID/status", paymentHandler.UpdatePaymentStatus)
 
