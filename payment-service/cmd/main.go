@@ -30,7 +30,7 @@ func main() {
 		log.Fatalf("Failed to automigrate: %v", err)
 	}
 
-	rabbitURL := config.GetEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
+	rabbitURL := cfg.MQURL
 	rabbitClient, err := rabbitmq.NewClient(rabbitURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)

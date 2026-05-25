@@ -16,6 +16,7 @@ type Config struct {
 	DBName     string
 	TimeZone   string
 	Port       string
+	MQURL      string
 }
 
 func GetEnv(key string, fallback ...string) string {
@@ -43,5 +44,6 @@ func LoadConfig() *Config {
 		DBName:     GetEnv("DB_NAME"),
 		Port:       GetEnv("PORT", "8080"),
 		TimeZone:   GetEnv("TIMEZONE", "Asia/Bangkok"),
+		MQURL:      GetEnv("MQ_URL", "amqp://guest:guest@localhost:5672/"),
 	}
 }

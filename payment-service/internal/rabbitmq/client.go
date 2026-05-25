@@ -50,6 +50,20 @@ func NewClient(url string) (*Client, error) {
 		return nil, fmt.Errorf("failed to declare queue: %w", err)
 	}
 
+	// Declare order_exchange to ensure it exists before binding
+	err = ch.ExchangeDeclare(
+		"order_exchange", // name
+		"direct",         // type
+		true,             // durable
+		false,            // auto-deleted
+		false,            // internal
+		false,            // no-wait
+		nil,              // arguments
+	)
+	if err != nil {
+		log.Printf("Warning: failed to declare order_exchange: %v", err)
+	}
+
 	// Example binding to order exchange if needed
 	err = ch.QueueBind(
 		q.Name,
