@@ -13,6 +13,7 @@ type OrderRepository interface {
 	Create(ctx context.Context, order *models.Order) error
 	GetAll(ctx context.Context) ([]models.Order, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	GetByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error)
 	Update(ctx context.Context, order *models.Order) error
 	GetExpiredPendingOrders(ctx context.Context, timeout time.Duration) ([]models.Order, error)
 }
@@ -54,5 +55,11 @@ func (r *orderRepository) GetExpiredPendingOrders(ctx context.Context, timeout t
 	err := r.db.WithContext(ctx).
 		Where("status = ? AND created_at < ?", "PENDING", threshold).
 		Find(&orders).Error
+	return orders, err
+}
+
+func (r *orderRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error) {
+	var orders []models.Order
+	err := r.db.WithContext(ctx).Preload("Items").Where("user_id = ?", userID).Find(&orders).Error
 	return orders, err
 }

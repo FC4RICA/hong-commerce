@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/FC4RICA/hong-commerce/order-service/internal/config"
+	_ "github.com/FC4RICA/hong-commerce/order-service/docs"
 	"github.com/FC4RICA/hong-commerce/order-service/internal/handlers"
 	"github.com/FC4RICA/hong-commerce/order-service/internal/models"
 	"github.com/FC4RICA/hong-commerce/order-service/internal/repositories"
@@ -15,11 +16,17 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/swagger"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
+// @title Order Service API
+// @version 1.0
+// @description Core service responsible for managing order life cycles and saga coordination.
+// @host localhost:8083
+// @BasePath /
 func main() {
 	cfg := config.LoadConfig()
 
@@ -97,6 +104,9 @@ func main() {
 		return c.SendString("OK")
 	})
 
+	// Swagger UI route
+	app.Get("/swagger/*", swagger.HandlerDefault)
+
 	// Request Timeout Middleware (Custom safe implementation)
 	orderTimeout := 5 * time.Second
 	timeoutMiddleware := func(c *fiber.Ctx) error {
@@ -111,6 +121,7 @@ func main() {
 	app.Post("/", timeoutMiddleware, h.CreateOrder)
 	app.Get("/", timeoutMiddleware, h.GetAllOrders)
 	app.Get("/:id", timeoutMiddleware, h.GetOrderByID)
+	app.Get("/user/:userId", timeoutMiddleware, h.GetOrdersByUserID)
 
 	log.Printf("Order Service starting on port %s", cfg.Port)
 	if err := app.Listen(":" + cfg.Port); err != nil {

@@ -15,6 +15,7 @@ type mockOrderRepository struct {
 	CreateFunc                  func(ctx context.Context, order *models.Order) error
 	GetAllFunc                  func(ctx context.Context) ([]models.Order, error)
 	GetByIDFunc                 func(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	GetByUserIDFunc             func(ctx context.Context, userID uuid.UUID) ([]models.Order, error)
 	UpdateFunc                  func(ctx context.Context, order *models.Order) error
 	GetExpiredPendingOrdersFunc func(ctx context.Context, timeout time.Duration) ([]models.Order, error)
 }
@@ -50,6 +51,13 @@ func (m *mockOrderRepository) Update(ctx context.Context, order *models.Order) e
 func (m *mockOrderRepository) GetExpiredPendingOrders(ctx context.Context, timeout time.Duration) ([]models.Order, error) {
 	if m.GetExpiredPendingOrdersFunc != nil {
 		return m.GetExpiredPendingOrdersFunc(ctx, timeout)
+	}
+	return nil, nil
+}
+
+func (m *mockOrderRepository) GetByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error) {
+	if m.GetByUserIDFunc != nil {
+		return m.GetByUserIDFunc(ctx, userID)
 	}
 	return nil, nil
 }
@@ -299,5 +307,33 @@ func TestProcessTimeoutOrders(t *testing.T) {
 
 	if updatedOrder.Status != "CANCELLED" {
 		t.Errorf("expected timeout order status to be CANCELLED, got %s", updatedOrder.Status)
+	}
+}
+
+func TestGetOrdersByUserID(t *testing.T) {
+	userID := uuid.New()
+	expectedOrders := []models.Order{
+		{ID: uuid.New(), UserID: userID, Status: "PENDING"},
+		{ID: uuid.New(), UserID: userID, Status: "CONFIRMED"},
+	}
+
+	mockRepo := &mockOrderRepository{
+		GetByUserIDFunc: func(ctx context.Context, uID uuid.UUID) ([]models.Order, error) {
+			if uID == userID {
+				return expectedOrders, nil
+			}
+			return nil, errors.New("not found")
+		},
+	}
+
+	svc := services.NewOrderService(mockRepo, nil, 15)
+
+	orders, err := svc.GetOrdersByUserID(context.Background(), userID)
+	if err != nil {
+		t.Fatalf("GetOrdersByUserID returned error: %v", err)
+	}
+
+	if len(orders) != 2 {
+		t.Errorf("expected 2 orders, got %d", len(orders))
 	}
 }

@@ -16,6 +16,7 @@ type OrderService interface {
 	CreateOrder(ctx context.Context, userID uuid.UUID, items []models.OrderItem) (*models.Order, error)
 	GetAllOrders(ctx context.Context) ([]models.Order, error)
 	GetOrderByID(ctx context.Context, orderID uuid.UUID) (*models.Order, error)
+	GetOrdersByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error)
 	HandlePaymentSucceeded(ctx context.Context, orderID uuid.UUID, paymentID uuid.UUID) error
 	HandleInventoryReserved(ctx context.Context, orderID uuid.UUID) error
 	HandlePaymentFailed(ctx context.Context, orderID uuid.UUID, reason string) error
@@ -168,4 +169,8 @@ func (s *orderService) ProcessTimeoutOrders(ctx context.Context) error {
 
 func (s *orderService) GetAllOrders(ctx context.Context) ([]models.Order, error) {
     return s.repo.GetAll(ctx)
+}
+
+func (s *orderService) GetOrdersByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error) {
+	return s.repo.GetByUserID(ctx, userID)
 }

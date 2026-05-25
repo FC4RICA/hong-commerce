@@ -19,6 +19,7 @@ type mockOrderService struct {
 	CreateOrderFunc            func(ctx context.Context, userID uuid.UUID, items []models.OrderItem) (*models.Order, error)
 	GetAllOrdersFunc           func(ctx context.Context) ([]models.Order, error)
 	GetOrderByIDFunc           func(ctx context.Context, orderID uuid.UUID) (*models.Order, error)
+	GetOrdersByUserIDFunc      func(ctx context.Context, userID uuid.UUID) ([]models.Order, error)
 	HandlePaymentSucceededFunc func(ctx context.Context, orderID uuid.UUID, paymentID uuid.UUID) error
 	HandleInventoryReservedFunc func(ctx context.Context, orderID uuid.UUID) error
 	HandlePaymentFailedFunc    func(ctx context.Context, orderID uuid.UUID, reason string) error
@@ -43,6 +44,13 @@ func (m *mockOrderService) GetAllOrders(ctx context.Context) ([]models.Order, er
 func (m *mockOrderService) GetOrderByID(ctx context.Context, orderID uuid.UUID) (*models.Order, error) {
 	if m.GetOrderByIDFunc != nil {
 		return m.GetOrderByIDFunc(ctx, orderID)
+	}
+	return nil, nil
+}
+
+func (m *mockOrderService) GetOrdersByUserID(ctx context.Context, userID uuid.UUID) ([]models.Order, error) {
+	if m.GetOrdersByUserIDFunc != nil {
+		return m.GetOrdersByUserIDFunc(ctx, userID)
 	}
 	return nil, nil
 }
@@ -264,6 +272,47 @@ func TestGetOrderByID_Handler(t *testing.T) {
 
 		if resp.StatusCode != http.StatusNotFound {
 			t.Errorf("expected 404 Not Found, got %d", resp.StatusCode)
+		}
+	})
+}
+
+func TestGetOrdersByUserID_Handler(t *testing.T) {
+	app := fiber.New()
+	mockSvc := &mockOrderService{}
+	handler := handlers.NewOrderHandler(mockSvc)
+	app.Get("/user/:userId", handler.GetOrdersByUserID)
+
+	t.Run("Success", func(t *testing.T) {
+		userID := uuid.New()
+		mockSvc.GetOrdersByUserIDFunc = func(ctx context.Context, id uuid.UUID) ([]models.Order, error) {
+			if id != userID {
+				return nil, errors.New("mismatched id")
+			}
+			return []models.Order{
+				{ID: uuid.New(), UserID: userID, Status: "PENDING"},
+			}, nil
+		}
+
+		req := httptest.NewRequest("GET", "/user/"+userID.String(), nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("failed to run HTTP request: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("expected 200 OK, got %d", resp.StatusCode)
+		}
+	})
+
+	t.Run("Invalid UUID", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/user/not-a-uuid", nil)
+		resp, err := app.Test(req)
+		if err != nil {
+			t.Fatalf("failed to run HTTP request: %v", err)
+		}
+
+		if resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("expected 400 Bad Request, got %d", resp.StatusCode)
 		}
 	})
 }

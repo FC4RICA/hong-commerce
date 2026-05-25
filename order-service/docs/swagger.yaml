@@ -1,0 +1,203 @@
+basePath: /
+definitions:
+  handlers.CreateOrderRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/handlers.OrderItemRequest'
+        minItems: 1
+        type: array
+      user_id:
+        type: string
+    required:
+    - items
+    - user_id
+    type: object
+  handlers.OrderItemRequest:
+    properties:
+      product_id:
+        type: string
+      product_name:
+        type: string
+      quantity:
+        minimum: 1
+        type: integer
+      unit_price:
+        type: number
+    required:
+    - product_id
+    - product_name
+    - quantity
+    - unit_price
+    type: object
+  models.Order:
+    properties:
+      confirmed_at:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      inventory_confirmed:
+        type: boolean
+      items:
+        items:
+          $ref: '#/definitions/models.OrderItem'
+        type: array
+      payment_confirmed:
+        type: boolean
+      payment_id:
+        type: string
+      status:
+        type: string
+      total_amount:
+        type: number
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.OrderItem:
+    properties:
+      id:
+        type: string
+      order_id:
+        type: string
+      product_id:
+        type: string
+      product_name:
+        type: string
+      quantity:
+        type: integer
+      subtotal:
+        type: number
+      unit_price:
+        type: number
+    type: object
+host: localhost:8083
+info:
+  contact: {}
+  description: Core service responsible for managing order life cycles and saga coordination.
+  title: Order Service API
+  version: "1.0"
+paths:
+  /:
+    get:
+      description: Retrieve a list of all orders, including nested checkout items.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+        "500":
+          description: failed to fetch orders
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all orders
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Submit an order with multiple checkout items. Initiates checkout
+        saga flow.
+      parameters:
+      - description: Order Creation Payload
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: invalid request payload
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: internal database error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new order
+      tags:
+      - orders
+  /{id}:
+    get:
+      description: Retrieve order status and items details by its Order UUID.
+      parameters:
+      - description: Order ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+        "400":
+          description: invalid order_id format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: order not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get order details by ID
+      tags:
+      - orders
+  /user/{userId}:
+    get:
+      description: Retrieve a list of all orders associated with a specific User UUID.
+      parameters:
+      - description: User ID (UUID)
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+        "400":
+          description: invalid user_id format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: failed to fetch user orders
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get orders by user ID
+      tags:
+      - orders
+swagger: "2.0"

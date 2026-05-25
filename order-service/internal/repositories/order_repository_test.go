@@ -158,4 +158,27 @@ func TestOrderRepository(t *testing.T) {
 			t.Errorf("expected expired order ID %s, got %s", expiredOrder.ID, expired[0].ID)
 		}
 	})
+
+	t.Run("GetByUserID", func(t *testing.T) {
+		db.Exec("TRUNCATE TABLE order_items CASCADE")
+		db.Exec("TRUNCATE TABLE orders CASCADE")
+
+		userID := uuid.New()
+		order1 := &models.Order{UserID: userID, Status: "PENDING", TotalAmount: 100}
+		order2 := &models.Order{UserID: userID, Status: "CONFIRMED", TotalAmount: 200}
+		orderOther := &models.Order{UserID: uuid.New(), Status: "PENDING", TotalAmount: 300}
+
+		_ = repo.Create(ctx, order1)
+		_ = repo.Create(ctx, order2)
+		_ = repo.Create(ctx, orderOther)
+
+		orders, err := repo.GetByUserID(ctx, userID)
+		if err != nil {
+			t.Fatalf("failed to get orders by user ID: %v", err)
+		}
+
+		if len(orders) != 2 {
+			t.Errorf("expected 2 orders for user, got %d", len(orders))
+		}
+	})
 }

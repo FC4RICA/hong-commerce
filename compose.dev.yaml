@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway
@@ -15,7 +14,7 @@ services:
       INVENTORY_SERVICE_URL: http://inventory-service:8084
       PAYMENT_SERVICE_URL: http://payment-service:8085
     volumes:
-      - ./gateway:/app                     # mount source for hot reload
+      - ./gateway:/app # mount source for hot reload
     restart: "no"
     depends_on:
       user-service:
@@ -67,10 +66,12 @@ services:
       dockerfile: Dockerfile
       target: dev
     container_name: hong_commerce_order_service
+    ports:
+      - "8083:8083"
     environment:
       PORT: ${ORDER_SERVICE_PORT}
       ORDER_DB_HOST: order-db
-      ORDER_DB_PORT: ${ORDER_DB_PORT}
+      ORDER_DB_PORT: 5432
       ORDER_DB_USER: ${ORDER_DB_USER}
       ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
       ORDER_DB_NAME: ${ORDER_DB_NAME}
@@ -86,7 +87,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${ORDER_SERVICE_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:${ORDER_SERVICE_PORT}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -98,6 +103,8 @@ services:
       POSTGRES_USER: ${ORDER_DB_USER}
       POSTGRES_PASSWORD: ${ORDER_DB_PASSWORD}
       POSTGRES_DB: ${ORDER_DB_NAME}
+    ports:
+      - "${ORDER_DB_PORT}:5432"
     volumes:
       - order_db_data:/var/lib/postgresql
       - ./order-service/migrations:/docker-entrypoint-initdb.d
@@ -110,6 +117,9 @@ services:
 
   rabbitmq:
     image: rabbitmq:4.0-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_running"]
       interval: 10s
