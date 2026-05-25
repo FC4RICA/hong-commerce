@@ -78,17 +78,21 @@ func (s *orderService) CreateOrder(ctx context.Context, userID uuid.UUID, items 
 	}
 	body, _ := json.Marshal(event)
 
-	err := s.mqChan.PublishWithContext(ctx,
-		"order.events",   // exchange
-		"order.created",  // routing key
-		false,            // mandatory
-		false,            // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		})
-	if err != nil {
-		fmt.Printf("failed to publish event: %v\n", err)
+	if s.mqChan != nil {
+		err := s.mqChan.PublishWithContext(ctx,
+			"order.events",   // exchange
+			"order.created",  // routing key
+			false,            // mandatory
+			false,            // immediate
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        body,
+			})
+		if err != nil {
+			fmt.Printf("failed to publish event: %v\n", err)
+		}
+	} else {
+		fmt.Println("rabbitmq channel is nil, skipping event publication")
 	}
 
 	return order, nil
