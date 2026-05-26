@@ -8,7 +8,7 @@ const QUEUE_NAME = "inventory.order_events";
 export class RabbitMQConsumer {
   constructor(
     private readonly reserveStock: ReserveStock,
-    private readonly eventBus: EventBus
+    private readonly eventBus: EventBus,
   ) {}
 
   async start(): Promise<void> {
@@ -31,7 +31,7 @@ export class RabbitMQConsumer {
 
         if (routingKey === "order.created") {
           const { id: orderId, items } = content;
-          
+
           if (!orderId || !Array.isArray(items)) {
             console.error("[RabbitMQ] Invalid order event payload");
             channel.ack(msg);
@@ -54,15 +54,30 @@ export class RabbitMQConsumer {
               items,
             });
 
-            console.log(`[RabbitMQ] Successfully reserved stock for order ${orderId}`);
+            console.log(
+              `[RabbitMQ] Successfully reserved stock for order ${orderId}`,
+            );
             channel.ack(msg);
           } catch (error: any) {
-            console.error(`[RabbitMQ] Reservation failed for order ${orderId}:`, error.message);
-            // Here you might publish inventory.failed or similar if needed by saga
-            channel.nack(msg, false, false);
+            console.error(
+              `[RabbitMQ] Reservation failed for order ${orderId}:`,
+              error.message,
+            );
+
+            // Publish inventory.failed event so other services can react (Saga compensation)
+            await this.eventBus.publish("inventory.failed", {
+              orderId,
+              reason: error.message,
+              timestamp: new Date().toISOString(),
+            });
+
+            // Ack the message because we've handled the failure by notifying other services.
+            // Nacking without requeueing (false, false) is also an option, but publishing
+            // a failure event is the standard way to handle business logic failures in a saga.
+            channel.ack(msg);
           }
         } else {
-            channel.ack(msg);
+          channel.ack(msg);
         }
       } catch (error) {
         console.error("[RabbitMQ] Error processing message:", error);

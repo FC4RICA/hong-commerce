@@ -52,6 +52,38 @@ const app = new Elysia()
     }),
   )
   .get("/", () => "Inventory service is running.")
+  .get("/health", async ({ set }) => {
+    let dbStatus = "UP";
+    let rabbitStatus = "UP";
+
+    try {
+      await itemRepository.list();
+    } catch (e) {
+      dbStatus = "DOWN";
+    }
+
+    try {
+      await rabbitmq.getChannel();
+    } catch (e) {
+      rabbitStatus = "DOWN";
+    }
+
+    const isHealthy = dbStatus === "UP" && rabbitStatus === "UP";
+
+    if (!isHealthy) {
+      set.status = 503;
+    }
+
+    return {
+      status: isHealthy ? "OK" : "ERROR",
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      services: {
+        database: dbStatus,
+        rabbitmq: rabbitStatus,
+      },
+    };
+  })
   .use(
     itemRoutes({
       createItem,
