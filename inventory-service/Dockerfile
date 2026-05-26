@@ -17,8 +17,9 @@ RUN cd /temp/prod && bun install --frozen-lockfile --production
 FROM base AS dev
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
+RUN bun run db:generate
 ENV NODE_ENV=development
-CMD ["bun", "run", "dev"]
+CMD ["sh", "-c", "bun run db:push && bun run dev"]
 
 # 4. Prerelease/Build stage (generate Prisma)
 FROM base AS prerelease
@@ -32,6 +33,7 @@ ENV NODE_ENV=production
 # Copy production node_modules and generated prisma client
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /app/node_modules/@prisma/client node_modules/@prisma/client
+COPY --from=prerelease /app/node_modules/.prisma node_modules/.prisma
 COPY --from=prerelease /app/src src
 COPY --from=prerelease /app/package.json .
 COPY --from=prerelease /app/prisma prisma
@@ -39,4 +41,4 @@ COPY --from=prerelease /app/prisma prisma
 # Run as non-root user
 USER bun
 EXPOSE 3000
-CMD ["bun", "run", "src/index.ts"]
+CMD ["sh", "-c", "bun run db:push && bun run src/index.ts"]
