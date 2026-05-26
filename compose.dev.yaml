@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway
@@ -77,6 +76,12 @@ services:
     volumes:
       - ./inventory-service:/app
     restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     depends_on:
       inventory-db:
         condition: service_healthy
