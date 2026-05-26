@@ -70,18 +70,27 @@ func (s *orderService) CreateOrder(ctx context.Context, userID uuid.UUID, items 
 	}
 
 	event := map[string]interface{}{
-		"order_id":     order.ID,
-		"user_id":      order.UserID,
-		"items":        eventItems,
-		"total_amount": order.TotalAmount,
-		"status":       order.Status,
-		"timestamp":    time.Now().Unix(),
+		"orderID":   order.ID.String(),
+		"amount":    order.TotalAmount,
+		"currency":  "THB",
+		"timestamp": time.Now().Format(time.RFC3339),
 	}
 	body, _ := json.Marshal(event)
 
 	if s.mqChan != nil {
+		// Ensure order_exchange exists before publishing
+		_ = s.mqChan.ExchangeDeclare(
+			"order_exchange", // name
+			"direct",         // type
+			true,             // durable
+			false,            // auto-deleted
+			false,            // internal
+			false,            // no-wait
+			nil,              // arguments
+		)
+
 		err := s.mqChan.PublishWithContext(ctx,
-			"order.events",   // exchange
+			"order_exchange", // exchange
 			"order.created",  // routing key
 			false,            // mandatory
 			false,            // immediate

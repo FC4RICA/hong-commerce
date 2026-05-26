@@ -29,31 +29,49 @@ type SagaEvent struct {
 	Reason    string    `json:"reason"`
 }
 
+type PaymentCompletedEvent struct {
+	PaymentID string `json:"paymentID"`
+	OrderID   string `json:"orderID"`
+	Status    string `json:"status"`
+	PaidAt    string `json:"paidAt"`
+}
+
 func (w *EventWorker) Start(ctx context.Context) error {
-	// Declare exchange
-	err := w.mqChan.ExchangeDeclare(
-		"order.events", // name
-		"topic",        // type
-		true,           // durable
-		false,          // auto-deleted
-		false,          // internal
-		false,          // no-wait
-		nil,            // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare exchange: %w", err)
+	// Declare the different exchanges used in the dev stack
+	exchanges := []struct {
+		name string
+		kind string
+	}{
+		{"order.events", "topic"},
+		{"payment_status_exchange", "direct"},
+	}
+
+	for _, ex := range exchanges {
+		err := w.mqChan.ExchangeDeclare(
+			ex.name, // name
+			ex.kind, // type
+			true,    // durable
+			false,   // auto-deleted
+			false,   // internal
+			false,   // no-wait
+			nil,     // arguments
+		)
+		if err != nil {
+			return fmt.Errorf("failed to declare exchange %s: %w", ex.name, err)
+		}
 	}
 
 	// Declare and bind queues for each event type
 	events := []struct {
 		queue      string
+		exchange   string
 		routingKey string
-		handler    func(SagaEvent) error
+		handler    func([]byte) error
 	}{
-		{"order.payment.succeeded", "payment.succeeded", w.handlePaymentSucceeded},
-		{"order.inventory.reserved", "inventory.reserved", w.handleInventoryReserved},
-		{"order.payment.failed", "payment.failed", w.handlePaymentFailed},
-		{"order.inventory.failed", "inventory.failed", w.handleInventoryFailed},
+		{"order.payment.succeeded", "payment_status_exchange", "payment.success", w.handlePaymentSucceeded},
+		{"order.inventory.reserved", "order.events", "inventory.reserved", w.handleInventoryReserved},
+		{"order.payment.failed", "order.events", "payment.failed", w.handlePaymentFailed},
+		{"order.inventory.failed", "order.events", "inventory.failed", w.handleInventoryFailed},
 	}
 
 	for _, e := range events {
@@ -62,9 +80,9 @@ func (w *EventWorker) Start(ctx context.Context) error {
 			return fmt.Errorf("failed to declare queue %s: %w", e.queue, err)
 		}
 
-		err = w.mqChan.QueueBind(e.queue, e.routingKey, "order.events", false, nil)
+		err = w.mqChan.QueueBind(e.queue, e.routingKey, e.exchange, false, nil)
 		if err != nil {
-			return fmt.Errorf("failed to bind queue %s: %w", e.queue, err)
+			return fmt.Errorf("failed to bind queue %s to exchange %s: %w", e.queue, e.exchange, err)
 		}
 
 		msgs, err := w.mqChan.Consume(e.queue, "", false, false, false, false, nil)
@@ -72,21 +90,13 @@ func (w *EventWorker) Start(ctx context.Context) error {
 			return fmt.Errorf("failed to consume from %s: %w", e.queue, err)
 		}
 
-		go func(handler func(SagaEvent) error, queueName string) {
+		go func(handler func([]byte) error, queueName string) {
 			for d := range msgs {
-				var evt SagaEvent
-				if err := json.Unmarshal(d.Body, &evt); err != nil {
-					log.Printf("failed to unmarshal event from %s: %v", queueName, err)
-					d.Nack(false, false)
-					continue
-				}
-
-				if err := handler(evt); err != nil {
+				if err := handler(d.Body); err != nil {
 					log.Printf("failed to handle event from %s: %v", queueName, err)
 					d.Nack(false, true) // Requeue on error
 					continue
 				}
-
 				d.Ack(false)
 			}
 		}(e.handler, e.queue)
@@ -95,18 +105,45 @@ func (w *EventWorker) Start(ctx context.Context) error {
 	return nil
 }
 
-func (w *EventWorker) handlePaymentSucceeded(evt SagaEvent) error {
-	return w.svc.HandlePaymentSucceeded(context.Background(), evt.OrderID, evt.PaymentID)
+func (w *EventWorker) handlePaymentSucceeded(body []byte) error {
+	var evt PaymentCompletedEvent
+	if err := json.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal payment succeeded event: %w", err)
+	}
+
+	orderUUID, err := uuid.Parse(evt.OrderID)
+	if err != nil {
+		return fmt.Errorf("invalid orderID format: %w", err)
+	}
+
+	paymentUUID, err := uuid.Parse(evt.PaymentID)
+	if err != nil {
+		return fmt.Errorf("invalid paymentID format: %w", err)
+	}
+
+	return w.svc.HandlePaymentSucceeded(context.Background(), orderUUID, paymentUUID)
 }
 
-func (w *EventWorker) handleInventoryReserved(evt SagaEvent) error {
+func (w *EventWorker) handleInventoryReserved(body []byte) error {
+	var evt SagaEvent
+	if err := json.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal inventory reserved event: %w", err)
+	}
 	return w.svc.HandleInventoryReserved(context.Background(), evt.OrderID)
 }
 
-func (w *EventWorker) handlePaymentFailed(evt SagaEvent) error {
+func (w *EventWorker) handlePaymentFailed(body []byte) error {
+	var evt SagaEvent
+	if err := json.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal payment failed event: %w", err)
+	}
 	return w.svc.HandlePaymentFailed(context.Background(), evt.OrderID, evt.Reason)
 }
 
-func (w *EventWorker) handleInventoryFailed(evt SagaEvent) error {
+func (w *EventWorker) handleInventoryFailed(body []byte) error {
+	var evt SagaEvent
+	if err := json.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal inventory failed event: %w", err)
+	}
 	return w.svc.HandleInventoryFailed(context.Background(), evt.OrderID, evt.Reason)
 }
