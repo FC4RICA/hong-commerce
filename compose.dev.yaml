@@ -164,16 +164,20 @@ services:
   payment-db:
     image: postgres:18.3-alpine3.23
     container_name: payment-db
-    # ports:
-    #   - "5435:5432" # Expose on port 5435 for DBeaver access
+    ports:
+      - "${PAYMENT_DB_PORT:-5432}:5432" # Expose on port 5435 for DBeaver access
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER: ${PAYMENT_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
-      POSTGRES_DB: paymentdb
+      POSTGRES_DB: ${PAYMENT_DB_NAME:-paymentdb}
     volumes:
       - payment_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentdb"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${PAYMENT_DB_USER:-postgres} -d ${PAYMENT_DB_NAME:-paymentdb}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
