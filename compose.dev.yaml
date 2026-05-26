@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway
@@ -22,6 +21,10 @@ services:
         condition: service_healthy
       order-service:
         condition: service_healthy
+      payment-service:
+        condition: service_healthy
+    networks:
+      - gateway-network
 
   user-service:
     build:
@@ -79,7 +82,7 @@ services:
       ORDER_DB_PASSWORD: ${ORDER_DB_PASSWORD}
       ORDER_DB_NAME: ${ORDER_DB_NAME}
       ORDER_DB_SSLMODE: ${ORDER_DB_SSLMODE}
-      RABBITMQ_URL: ${RABBITMQ_URL}
+      MQ_URL: ${MQ_URL}
       ORDER_TIMEOUT_MINUTES: ${ORDER_TIMEOUT_MINUTES}
     volumes:
       - ./order-service:/app
@@ -90,7 +93,11 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${ORDER_SERVICE_PORT}/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:${ORDER_SERVICE_PORT}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -118,17 +125,18 @@ services:
     build:
       context: ./payment-service
       dockerfile: Dockerfile
+      target: dev
     container_name: payment-service
     ports:
-      - "8085:8085" # Expose for direct access if needed
+      - "${PAYMENT_SERVICE_PORT}:${PAYMENT_SERVICE_PORT}"
     environment:
       DB_HOST: payment-db
       DB_PORT: 5432 # Connects to payment-db internally on 5432
       DB_USER: postgres
-      DB_PASSWORD: ${USER_DB_PASSWORD}
+      DB_PASSWORD: ${PAYMENT_DB_PASSWORD}
       DB_NAME: paymentdb
-      PORT: 8085
-      MQ_URL: amqp://guest:guest@rabbitmq:5672/
+      PORT: ${PAYMENT_SERVICE_PORT}
+      MQ_URL: amqp://${MQ_USER:-guest}:${MQ_PASSWORD:-guest}@rabbitmq:5672/${MQ_VHOST:-}
     volumes:
       - ./payment-service:/app
     depends_on:
@@ -137,11 +145,17 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:${PAYMENT_SERVICE_PORT}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 15s
+    networks:
+      - payment-network
 
   payment-db:
     image: postgres:18.3-alpine3.23
@@ -150,7 +164,7 @@ services:
       - "5435:5432" # Expose on port 5435 for DBeaver access
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD}
       POSTGRES_DB: paymentdb
     volumes:
       - payment_db_data:/var/lib/postgresql
@@ -160,6 +174,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - gateway-network
+      - payment-network
 
   rabbitmq:
     image: rabbitmq:4.0-management-alpine
@@ -171,8 +188,16 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    networks:
+      - payment-network
 
 volumes:
   user_db_data:
   order_db_data:
   payment_db_data:
+
+networks:
+  gateway-network:
+    driver: bridge
+  payment-network:
+    driver: bridge
