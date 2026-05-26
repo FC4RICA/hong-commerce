@@ -222,15 +222,16 @@ services:
       API_PORT: 8084
       DB_HOST: inventory-db
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_NAME: inventorydb
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      DB_USER: ${INVENTORY_DB_USER:-postgres}
+      DB_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
+      DB_NAME: ${INVENTORY_DB_NAME:-inventorydb}
+      DATABASE_URL: postgresql://${INVENTORY_DB_USER:-postgres}:${INVENTORY_DB_PASSWORD:-postgres}@inventory-db:5432/${INVENTORY_DB_NAME:-inventorydb}?sslmode=disable
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
     volumes:
       - ./inventory-service:/app
     restart: "no"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -244,13 +245,17 @@ services:
   inventory-db:
     image: postgres:18.3-alpine3.23
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: inventorydb
+      POSTGRES_USER: ${INVENTORY_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${INVENTORY_DB_NAME:-inventorydb}
     volumes:
-      - inventory_db_data:/var/lib/postgresql/data
+      - inventory_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d inventorydb"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${INVENTORY_DB_USER:-postgres} -d ${INVENTORY_DB_NAME:-inventorydb}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5

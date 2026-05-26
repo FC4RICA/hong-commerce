@@ -13,11 +13,11 @@
     "@elysiajs/swagger": "latest",
     "@prisma/client": "5.22.0",
     "amqplib": "0.10.8",
-    "elysia": "latest"
+    "elysia": "latest",
+    "prisma": "5.22.0"
   },
   "devDependencies": {
-    "bun-types": "latest",
-    "prisma": "5.22.0"
+    "bun-types": "latest"
   },
   "module": "src/index.js"
 }
