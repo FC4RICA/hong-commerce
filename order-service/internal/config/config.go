@@ -29,7 +29,7 @@ func LoadConfig() *Config {
 		DBPassword:     getEnv("ORDER_DB_PASSWORD", "postgres"),
 		DBName:         getEnv("ORDER_DB_NAME", "orderdb"),
 		DBSSLMode:      getEnv("ORDER_DB_SSLMODE", "disable"),
-		RabbitMQURL:    getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
+		RabbitMQURL:    getEnv("MQ_URL", "amqp://guest:guest@localhost:5672/"),
 		TimeoutMinutes: timeout,
 	}
 }

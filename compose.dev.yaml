@@ -114,6 +114,53 @@ services:
       retries: 5
       start_period: 10s
 
+  payment-service:
+    build:
+      context: ./payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    ports:
+      - "8085:8085" # Expose for direct access if needed
+    environment:
+      DB_HOST: payment-db
+      DB_PORT: 5432 # Connects to payment-db internally on 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${USER_DB_PASSWORD}
+      DB_NAME: paymentdb
+      PORT: 8085
+      MQ_URL: amqp://guest:guest@rabbitmq:5672/
+    volumes:
+      - ./payment-service:/app
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  payment-db:
+    image: postgres:18.3-alpine3.23
+    container_name: payment-db
+    ports:
+      - "5435:5432" # Expose on port 5435 for DBeaver access
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD}
+      POSTGRES_DB: paymentdb
+    volumes:
+      - payment_db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d paymentdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   rabbitmq:
     image: rabbitmq:4.0-management-alpine
     ports:
@@ -128,3 +175,4 @@ services:
 volumes:
   user_db_data:
   order_db_data:
+  payment_db_data:
