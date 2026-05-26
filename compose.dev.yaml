@@ -47,6 +47,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+    networks:
+      - user-network
+      - gateway-network
 
   user-db:
     image: postgres:18.3-alpine3.23
@@ -65,6 +68,8 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    networks:
+      - user-network
 
   order-service:
     build:
@@ -104,6 +109,7 @@ services:
       start_period: 15s
     networks:
       - order-network
+      - gateway-network
 
   order-db:
     image: postgres:18.3-alpine3.23
@@ -160,6 +166,7 @@ services:
       start_period: 15s
     networks:
       - payment-network
+      - gateway-network
 
   payment-db:
     image: postgres:18.3-alpine3.23
@@ -211,6 +218,8 @@ volumes:
 
 networks:
   gateway-network:
+    driver: bridge
+  user-network:
     driver: bridge
   payment-network:
     driver: bridge
