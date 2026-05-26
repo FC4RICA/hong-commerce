@@ -16,6 +16,20 @@ export class ReserveStock {
 
   async execute(input: ReserveStockInput) {
     return await prisma.$transaction(async (tx) => {
+      // 1. Idempotency Check: Check if a reservation already exists for this order
+      const existing = await tx.reservation.findFirst({
+        where: { orderId: input.orderId },
+      });
+
+      if (existing) {
+        console.log(
+          `[ReserveStock] Order ${input.orderId} already processed. Returning existing state.`,
+        );
+        // We could fetch and return all items, but for the current flow,
+        // just acknowledging success is enough to prevent double-deduction.
+        return [];
+      }
+
       const reservedItems = [];
 
       for (const orderItem of input.items) {
@@ -30,7 +44,7 @@ export class ReserveStock {
         const available = item.quantity - item.reserved;
         if (available < orderItem.quantity) {
           throw new ValidationError(
-            `Insufficient stock for item ${item.name}. Available: ${available}, Requested: ${orderItem.quantity}`
+            `Insufficient stock for item ${item.name}. Available: ${available}, Requested: ${orderItem.quantity}`,
           );
         }
 
