@@ -152,7 +152,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- http://localhost:${PAYMENT_SERVICE_PORT}/health || exit 1",
+          "wget -qO- http://127.0.0.1:${PAYMENT_SERVICE_PORT}/health || exit 1",
         ]
       interval: 10s
       timeout: 5s
