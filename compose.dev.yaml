@@ -231,7 +231,11 @@ services:
       - ./inventory-service:/app
     restart: "no"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:$${API_PORT:-3000}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
