@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway
@@ -84,7 +83,7 @@ services:
       DB_USER: postgres
       DB_PASSWORD: ${INVENTORY_DB_PASSWORD}
       DB_NAME: inventorydb
-      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      MQ_URL: amqp://guest:guest@rabbitmq:5672
     deploy:
       resources:
         limits:

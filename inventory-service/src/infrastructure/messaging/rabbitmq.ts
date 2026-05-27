@@ -12,7 +12,7 @@ export const rabbitmq = {
       return channel;
     }
 
-    const url = process.env.RABBITMQ_URL ?? "amqp://localhost:5672";
+    const url = process.env.MQ_URL ?? "amqp://localhost:5672";
     try {
       connection = await amqplib.connect(url);
 
