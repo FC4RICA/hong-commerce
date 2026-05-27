@@ -3,7 +3,7 @@ import amqplib, { type Channel, type Connection } from "amqplib";
 let connection: Connection | null = null;
 let channel: Channel | null = null;
 
-const EXCHANGE = "inventory.events";
+const EXCHANGE = "order.events";
 
 export const rabbitmq = {
   exchange: EXCHANGE,

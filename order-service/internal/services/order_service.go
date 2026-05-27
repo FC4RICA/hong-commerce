@@ -73,6 +73,7 @@ func (s *orderService) CreateOrder(ctx context.Context, userID uuid.UUID, items 
 		"orderID":   order.ID.String(),
 		"amount":    order.TotalAmount,
 		"currency":  "THB",
+		"items":     eventItems,
 		"timestamp": time.Now().Format(time.RFC3339),
 	}
 	body, _ := json.Marshal(event)

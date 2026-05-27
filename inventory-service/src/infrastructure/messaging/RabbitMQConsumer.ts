@@ -2,7 +2,7 @@ import { rabbitmq } from "./rabbitmq";
 import type { ReserveStock } from "../../application/use-cases/ReserveStock";
 import type { EventBus } from "../../application/ports/EventBus";
 
-const ORDERS_EXCHANGE = "order.events";
+const ORDERS_EXCHANGE = "order_exchange";
 const QUEUE_NAME = "inventory.order_events";
 
 export class RabbitMQConsumer {
@@ -14,7 +14,7 @@ export class RabbitMQConsumer {
   async start(): Promise<void> {
     const channel = await rabbitmq.getChannel();
 
-    await channel.assertExchange(ORDERS_EXCHANGE, "topic", { durable: true });
+    await channel.assertExchange(ORDERS_EXCHANGE, "direct", { durable: true });
     await channel.assertQueue(QUEUE_NAME, { durable: true });
     await channel.bindQueue(QUEUE_NAME, ORDERS_EXCHANGE, "order.created");
 
@@ -30,7 +30,7 @@ export class RabbitMQConsumer {
         console.log(`[RabbitMQ] Received event ${routingKey}:`, content);
 
         if (routingKey === "order.created") {
-          const { id: orderId, items } = content;
+          const { orderID: orderId, items } = content;
 
           if (!orderId || !Array.isArray(items)) {
             console.error("[RabbitMQ] Invalid order event payload");
@@ -43,14 +43,14 @@ export class RabbitMQConsumer {
             await this.reserveStock.execute({
               orderId,
               items: items.map((i: any) => ({
-                productId: i.id,
+                productId: i.product_id,
                 quantity: i.quantity,
               })),
             });
 
             // 2. Publish inventory.reserved
             await this.eventBus.publish("inventory.reserved", {
-              orderId,
+              order_id: orderId,
               items,
             });
 
@@ -66,7 +66,7 @@ export class RabbitMQConsumer {
 
             // Publish inventory.failed event so other services can react (Saga compensation)
             await this.eventBus.publish("inventory.failed", {
-              orderId,
+              order_id: orderId,
               reason: error.message,
               timestamp: new Date().toISOString(),
             });
