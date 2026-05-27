@@ -1,0 +1,29 @@
+info:
+  name: CreateOrder
+  type: http
+  seq: 10
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/orders
+  body:
+    type: json
+    data: |-
+      {
+        "user_id": "a18aaaeb-77b4-40f7-8730-f04e2a309cd9",
+        "items": [
+          {
+            "product_id": "7bfb1d5b-afa2-47e5-901c-0aad13dc2a47",
+            "product_name": "Sony PlayStation 5",
+            "unit_price": 16900,
+            "quantity": 2
+          }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

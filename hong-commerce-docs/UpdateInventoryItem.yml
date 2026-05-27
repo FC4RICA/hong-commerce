@@ -1,0 +1,26 @@
+info:
+  name: UpdateInventoryItem
+  type: http
+  seq: 8
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/inventories/items/:id
+  params:
+    - name: id
+      value: ""
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Sony PlayStation 5 Slim",
+        "quantity": 15
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
