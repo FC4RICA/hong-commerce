@@ -23,6 +23,8 @@ services:
         condition: service_healthy
       payment-service:
         condition: service_healthy
+      inventory-service:
+        condition: service_started
     networks:
       - gateway-network
 
@@ -211,10 +213,48 @@ services:
       - payment-network
       - order-network
 
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+      target: dev
+    environment:
+      API_PORT: 8084
+      DB_HOST: inventory-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: inventorydb
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    volumes:
+      - ./inventory-service:/app
+    restart: "no"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  inventory-db:
+    image: postgres:18.3-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: inventorydb
+    volumes:
+      - inventory_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inventorydb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
 volumes:
   user_db_data:
   order_db_data:
   payment_db_data:
+  inventory_db_data:
 
 networks:
   gateway-network:
@@ -224,4 +264,6 @@ networks:
   payment-network:
     driver: bridge
   order-network:
+    driver: bridge
+  inventory-network:
     driver: bridge
