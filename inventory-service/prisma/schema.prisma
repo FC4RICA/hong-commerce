@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Item {
+  id           String        @id @default(cuid())
+  name         String
+  quantity     Int
+  reserved     Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+}
+
+model Reservation {
+  id        String   @id @default(cuid())
+  orderId   String
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id])
+  quantity  Int
+  status    String   // "reserved", "released"
+  createdAt DateTime @default(now())
+}

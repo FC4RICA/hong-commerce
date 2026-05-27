@@ -1,0 +1,23 @@
+{
+  "name": "inventory-service",
+  "version": "1.0.50",
+  "scripts": {
+    "test": "bun test",
+    "dev": "bun run --watch src/index.ts",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev --name init",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@elysiajs/swagger": "latest",
+    "@prisma/client": "5.22.0",
+    "amqplib": "0.10.8",
+    "elysia": "latest",
+    "prisma": "5.22.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "module": "src/index.js"
+}
