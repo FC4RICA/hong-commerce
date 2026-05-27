@@ -1,0 +1,23 @@
+info:
+  name: Craeteuser
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/users/register
+  body:
+    type: json
+    data: |-
+      {
+        "email" : "dadasd@dasdasdd.com",
+        "password" : "12345678",
+        "name" : "123123123123"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
