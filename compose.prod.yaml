@@ -1,5 +1,4 @@
 services:
-
   gateway:
     build:
       context: ./gateway

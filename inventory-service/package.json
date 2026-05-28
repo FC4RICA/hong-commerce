@@ -6,6 +6,7 @@
     "dev": "bun run --watch src/index.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:seed": "bun prisma/seed.ts",
     "db:migrate": "prisma migrate dev --name init",
     "db:studio": "prisma studio"
   },

@@ -1,5 +1,10 @@
 .PHONY: dev-up dev-down dev-fresh migrate-up
 
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
+
 dev:
 	docker compose -f compose.dev.yaml up --build
 
@@ -13,3 +18,8 @@ seed-admin:
 		-e SEED_ADMIN_PASSWORD=$(SEED_ADMIN_PASSWORD) \
 		user-service \
 		go run ./cmd/seed/main.go
+
+seed-inventory:
+	docker compose -f compose.dev.yaml exec inventory-service bun run db:seed
+
+seed: seed-admin seed-inventory

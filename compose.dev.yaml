@@ -11,10 +11,10 @@ services:
       USER_SERVICE_URL: http://user-service:8081
       CATALOG_SERVICE_URL: http://catalog-service:8082
       ORDER_SERVICE_URL: http://order-service:8083
-      INVENTORY_SERVICE_URL: http://inventory-service:8084
+      INVENTORY_SERVICE_URL: http://inventory-service:3000
       PAYMENT_SERVICE_URL: http://payment-service:8085
     volumes:
-      - ./gateway:/app # mount source for hot reload
+      - ./gateway:/app
     restart: "no"
     depends_on:
       user-service:
@@ -194,6 +194,66 @@ services:
     networks:
       - payment-network
 
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+      target: dev
+    container_name: inventory-service
+    ports:
+      - "${INVENTORY_SERVICE_PORT:-8084}:3000"
+    environment:
+      API_PORT: 3000
+      DB_HOST: inventory-db
+      DB_PORT: 5432
+      DB_USER: ${INVENTORY_DB_USER:-postgres}
+      DB_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
+      DB_NAME: ${INVENTORY_DB_NAME:-inventorydb}
+      DATABASE_URL: postgresql://${INVENTORY_DB_USER:-postgres}:${INVENTORY_DB_PASSWORD:-postgres}@inventory-db:5432/${INVENTORY_DB_NAME:-inventorydb}?sslmode=disable
+      RABBITMQ_URL: amqp://${MQ_USER:-guest}:${MQ_PASSWORD:-guest}@rabbitmq:5672/${MQ_VHOST:-}
+    volumes:
+      - ./inventory-service:/app
+      - /app/node_modules
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - inventory-network
+      - gateway-network
+
+  inventory-db:
+    image: postgres:18.3-alpine3.23
+    container_name: inventory-db
+    ports:
+      - "5436:5432"
+    environment:
+      POSTGRES_USER: ${INVENTORY_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${INVENTORY_DB_NAME:-inventorydb}
+    volumes:
+      - inventory_db_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${INVENTORY_DB_USER:-postgres} -d ${INVENTORY_DB_NAME:-inventorydb}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - inventory-network
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: rabbitmq
@@ -212,54 +272,7 @@ services:
     networks:
       - payment-network
       - order-network
-
-  inventory-service:
-    build:
-      context: ./inventory-service
-      dockerfile: Dockerfile
-      target: dev
-    environment:
-      API_PORT: 8084
-      DB_HOST: inventory-db
-      DB_PORT: 5432
-      DB_USER: ${INVENTORY_DB_USER:-postgres}
-      DB_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
-      DB_NAME: ${INVENTORY_DB_NAME:-inventorydb}
-      DATABASE_URL: postgresql://${INVENTORY_DB_USER:-postgres}:${INVENTORY_DB_PASSWORD:-postgres}@inventory-db:5432/${INVENTORY_DB_NAME:-inventorydb}?sslmode=disable
-      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://guest:guest@rabbitmq:5672}
-    volumes:
-      - ./inventory-service:/app
-    restart: "no"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 15s
-    depends_on:
-      inventory-db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  inventory-db:
-    image: postgres:18.3-alpine3.23
-    environment:
-      POSTGRES_USER: ${INVENTORY_DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${INVENTORY_DB_NAME:-inventorydb}
-    volumes:
-      - inventory_db_data:/var/lib/postgresql
-    healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${INVENTORY_DB_USER:-postgres} -d ${INVENTORY_DB_NAME:-inventorydb}",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+      - inventory-network
 
 volumes:
   user_db_data:

@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Item {
-  id           String        @id @default(cuid())
+  id           String        @id @default(uuid())
   name         String
   quantity     Int
   reserved     Int           @default(0)
@@ -18,7 +18,7 @@ model Item {
 }
 
 model Reservation {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   orderId   String
   itemId    String
   item      Item     @relation(fields: [itemId], references: [id])
