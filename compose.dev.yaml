@@ -23,6 +23,8 @@ services:
         condition: service_healthy
       payment-service:
         condition: service_healthy
+      catalog-service:
+        condition: service_healthy
     networks:
       - gateway-network
 
@@ -211,10 +213,61 @@ services:
       - payment-network
       - order-network
 
+  catalog-service:
+    build:
+      context: ./catalog-service
+      dockerfile: Dockerfile
+      target: dev
+    container_name: catalog-service
+    ports:
+      - "${CATALOG_SERVICE_PORT:-8082}:${CATALOG_SERVICE_PORT:-8082}"
+    environment:
+      PORT: ${CATALOG_SERVICE_PORT:-8082}
+      DB_HOST: catalog-db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: ${CATALOG_DB_PASSWORD:-localdevpassword}
+      DB_NAME: ${CATALOG_DB_NAME:-catalogdb}
+    volumes:
+      - ./catalog-service:/app
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${CATALOG_SERVICE_PORT:-8082}/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - catalog-network
+      - gateway-network
+
+  catalog-db:
+    image: postgres:18.3-alpine3.23
+    container_name: catalog-db
+    ports:
+      - "${CATALOG_DB_PORT:-5436}:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD:-localdevpassword}
+      POSTGRES_DB: ${CATALOG_DB_NAME:-catalogdb}
+    volumes:
+      - catalog_db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ${CATALOG_DB_NAME:-catalogdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - catalog-network
+
 volumes:
   user_db_data:
   order_db_data:
   payment_db_data:
+  catalog_db_data:
 
 networks:
   gateway-network:
@@ -224,4 +277,6 @@ networks:
   payment-network:
     driver: bridge
   order-network:
+    driver: bridge
+  catalog-network:
     driver: bridge
