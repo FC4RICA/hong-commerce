@@ -1,0 +1,25 @@
+info:
+  name: UpdateCategory
+  type: http
+  seq: 17
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/catalog/categories/:id
+  params:
+    - name: id
+      value: ""
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "name": "Electronics & Gadgets"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
