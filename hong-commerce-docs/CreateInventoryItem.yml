@@ -1,17 +1,17 @@
 info:
-  name: Login
+  name: CreateInventoryItem
   type: http
-  seq: 2
+  seq: 5
 
 http:
   method: POST
-  url: http://localhost:8080/api/v1/users/login
+  url: http://localhost:8080/api/v1/inventories/items
   body:
     type: json
     data: |-
       {
-        "email" : "dadasd@dasdasdd.com",
-        "password" : "12345678"
+        "name": "Sony PlayStation 5",
+        "quantity": 15
       }
   auth: inherit
 

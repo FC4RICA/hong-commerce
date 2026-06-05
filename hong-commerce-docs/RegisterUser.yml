@@ -1,0 +1,23 @@
+info:
+  name: RegisterUser
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/users/register
+  body:
+    type: json
+    data: |-
+      {
+        "email" : "user@example.com",
+        "password" : "securepassword123",
+        "name" : "John Doe"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

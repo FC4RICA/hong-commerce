@@ -1,18 +1,17 @@
 info:
-  name: Craeteuser
+  name: LoginUser
   type: http
   seq: 2
 
 http:
   method: POST
-  url: http://localhost:8080/api/v1/users/register
+  url: http://localhost:8080/api/v1/users/login
   body:
     type: json
     data: |-
       {
-        "email" : "dadasd@dasdasdd.com",
-        "password" : "12345678",
-        "name" : "123123123123"
+        "email" : "user@example.com",
+        "password" : "securepassword123"
       }
   auth: inherit
 
