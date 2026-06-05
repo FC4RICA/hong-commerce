@@ -236,7 +236,7 @@ services:
     image: postgres:18.3-alpine3.23
     container_name: inventory-db
     ports:
-      - "5436:5432"
+      - "${INVENTORY_DB_PORT:-5436}:5432"
     environment:
       POSTGRES_USER: ${INVENTORY_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:-postgres}
@@ -297,7 +297,11 @@ services:
       catalog-db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:${CATALOG_SERVICE_PORT:-8082}/health || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:${CATALOG_SERVICE_PORT:-8082}/health || exit 1",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -310,7 +314,7 @@ services:
     image: postgres:18.3-alpine3.23
     container_name: catalog-db
     ports:
-      - "${CATALOG_DB_PORT:-5436}:5432"
+      - "${CATALOG_DB_PORT:-5437}:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${CATALOG_DB_PASSWORD:-localdevpassword}
@@ -318,7 +322,8 @@ services:
     volumes:
       - catalog_db_data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ${CATALOG_DB_NAME:-catalogdb}"]
+      test:
+        ["CMD-SHELL", "pg_isready -U postgres -d ${CATALOG_DB_NAME:-catalogdb}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -343,5 +348,6 @@ networks:
   order-network:
     driver: bridge
   catalog-network:
+    driver: bridge
   inventory-network:
     driver: bridge

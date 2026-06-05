@@ -8,11 +8,22 @@ import (
 	"github.com/FC4RICA/hong-commerce/gateway/proxy"
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"go.uber.org/zap"
 )
 
 func New(cfg *config.Config, logger *zap.Logger) (http.Handler, error) {
 	r := chi.NewRouter()
+
+	// CORS configuration
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// Build proxies per service
 	userProxy, err := proxy.New(cfg.UserServiceURL, cfg, logger)
