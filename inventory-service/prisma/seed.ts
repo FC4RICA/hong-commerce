@@ -11,6 +11,7 @@ async function main() {
     { name: "Nintendo Switch OLED", quantity: 20 },
     { name: "Apple iPad Air M2", quantity: 8 },
     { name: "Sony WH-1000XM5 Headphones", quantity: 25 },
+    { name: "iPhone 15 Pro", quantity: 12 },
   ];
 
   for (const item of items) {

@@ -1,0 +1,29 @@
+info:
+  name: UpdateProduct
+  type: http
+  seq: 22
+
+http:
+  method: PUT
+  url: http://localhost:8080/api/v1/catalog/products/:id
+  params:
+    - name: id
+      value: ""
+      type: path
+  body:
+    type: json
+    data: |-
+      {
+        "category_id": "uuid-of-category",
+        "name": "Sony PlayStation 5 Slim",
+        "description": "Next-gen gaming console - Slim version",
+        "price": 15900,
+        "image_url": "https://example.com/ps5-slim.jpg"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

@@ -1,0 +1,25 @@
+info:
+  name: CreateProduct
+  type: http
+  seq: 21
+
+http:
+  method: POST
+  url: http://localhost:8080/api/v1/catalog/products
+  body:
+    type: json
+    data: |-
+      {
+        "category_id": "uuid-of-category",
+        "name": "Sony PlayStation 5",
+        "description": "Next-gen gaming console",
+        "price": 16900,
+        "image_url": "https://example.com/ps5.jpg"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

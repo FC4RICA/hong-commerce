@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/FC4RICA/hong-commerce/catalog-service/config"
 	"github.com/FC4RICA/hong-commerce/catalog-service/db"
@@ -13,16 +14,27 @@ import (
 	"github.com/FC4RICA/hong-commerce/catalog-service/internal/services"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/logger"
+	"gorm.io/gorm"
 )
 
 func main() {
 	// 1. Load configuration
 	cfg := config.LoadConfig()
 
-	// 2. Connect to database
-	database, err := db.ConnectDB(cfg)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+	// 2. Connect to database (with Retries)
+	var database *gorm.DB
+	var err error
+	maxRetries := 5
+	for i := 1; i <= maxRetries; i++ {
+		log.Printf("Connecting to database (attempt %d/%d)...", i, maxRetries)
+		database, err = db.ConnectDB(cfg)
+		if err == nil {
+			break
+		}
+		if i == maxRetries {
+			log.Fatalf("failed to connect database after %d attempts: %v", maxRetries, err)
+		}
+		time.Sleep(time.Duration(i) * 2 * time.Second)
 	}
 
 	// 3. Initialize layers

@@ -22,4 +22,9 @@ seed-admin:
 seed-inventory:
 	docker compose -f compose.dev.yaml exec inventory-service bun run db:seed
 
-seed: seed-admin seed-inventory
+seed-catalog:
+	docker compose -f compose.dev.yaml run --rm \
+		catalog-service \
+		go run ./cmd/seed/main.go
+
+seed: seed-admin seed-inventory seed-catalog
